@@ -9,7 +9,10 @@ await page.goto(`file://${process.cwd()}/.github/generate/workflow-graph-app/bui
   waitUntil: 'domcontentloaded'
 });
 
-// Wait for graph container to load — update selector if needed
-await page.waitForSelector('#graph-container', { timeout: 5000 });
+// Wait for the SVG element to ensure graph is rendered
+await page.waitForSelector('svg', { timeout: 5000 });
+await page.waitForTimeout(2000); // Optional: ensure rendering finishes
 
 await page.screenshot({ path: '.github/generate/workflow_diagram.png' });
+
+await browser.close();
