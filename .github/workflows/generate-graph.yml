@@ -28,6 +28,9 @@ jobs:
     - name: Copy graph JSON into public folder before build
       run: cp .github/generate/workflow_graph.json .github/generate/workflow-graph-app/public/
 
+    - name: Copy graph JSON into public folder before build
+      run: cp .github/generate/workflow_graph.json .github/generate/workflow-graph-app/public/
+
     - name: Install React app dependencies & build
       run: |
         cd .github/generate/workflow-graph-app
