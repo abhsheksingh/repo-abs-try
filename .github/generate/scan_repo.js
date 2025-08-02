@@ -3,8 +3,10 @@
 import fs from 'fs';
 import path from 'path';
 
-const repoRoot = process.cwd(); // Root of the repo
-const ignoreDirs = new Set(['.git', 'node_modules', '.github/generate/workflow-graph-app/build']);
+const repoRoot = process.cwd();
+
+// These are relative substrings we want to ignore in paths
+const ignoreDirs = ['.git', 'node_modules', '.github/generate/workflow-graph-app/build'];
 
 /** Recursively scan directory and collect file paths */
 function scanDir(dir, parent = null, nodes = [], edges = []) {
@@ -12,11 +14,12 @@ function scanDir(dir, parent = null, nodes = [], edges = []) {
 
   for (const item of items) {
     const fullPath = path.join(dir, item.name);
-    const relPath = path.relative(repoRoot, fullPath);
+    const relPath = path.relative(repoRoot, fullPath).replace(/\\/g, '/');
 
-    if (ignoreDirs.has(item.name)) continue;
+    // Skip ignored directories
+    if (ignoreDirs.some(ignored => relPath.includes(ignored))) continue;
 
-    const id = relPath.replace(/\\/g, '/'); // For Windows compatibility
+    const id = relPath;
     nodes.push({ id });
 
     if (parent) {
@@ -34,7 +37,7 @@ function scanDir(dir, parent = null, nodes = [], edges = []) {
 const { nodes, edges } = scanDir(repoRoot);
 const graph = { nodes, edges };
 
-// Output file
+// Output path
 const outputPath = path.join(repoRoot, '.github/generate/workflow_graph.json');
 fs.writeFileSync(outputPath, JSON.stringify(graph, null, 2));
 
