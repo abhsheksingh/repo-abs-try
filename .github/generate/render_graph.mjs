@@ -6,8 +6,10 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 
 await page.goto(`file://${process.cwd()}/.github/generate/workflow-graph-app/build/index.html`, {
-  waitUntil: 'networkidle0'
+  waitUntil: 'domcontentloaded'
 });
-await page.screenshot({ path: '.github/generate/workflow_diagram.png' });
 
-await browser.close();
+// Wait for graph container to load — update selector if needed
+await page.waitForSelector('#graph-container', { timeout: 5000 });
+
+await page.screenshot({ path: '.github/generate/workflow_diagram.png' });
