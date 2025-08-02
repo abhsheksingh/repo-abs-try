@@ -1,63 +1,99 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import './App.css';
 
-const App = () => {
+function App() {
   const svgRef = useRef();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('workflow_graph.json')  // Served from public/
-      .then(res => res.json())
-      .then(drawGraph);
+    fetch('workflow_graph.json')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load graph JSON');
+        return res.json();
+      })
+      .then((graph) => {
+        drawGraph(graph);
+      })
+      .catch((err) => {
+        console.error('⚠️ Error loading graph JSON:', err);
+        setError(err.message);
+      });
   }, []);
 
-  const drawGraph = (treeData) => {
-    const width = 900;
+  function drawGraph(graph) {
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove(); // Clear previous contents
+
+    const width = 800;
     const height = 600;
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
-    svg.attr("width", width).attr("height", height);
+    svg.attr('viewBox', [0, 0, width, height]);
 
-    const root = d3.hierarchy({ name: 'root', children: treeData });
-    const treeLayout = d3.tree().size([height - 40, width - 100]);
-    const treeRoot = treeLayout(root);
+    const simulation = d3.forceSimulation(graph.nodes)
+      .force('link', d3.forceLink(graph.links).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(width / 2, height / 2));
 
-    svg.append("g").selectAll("line")
-      .data(treeRoot.links())
-      .enter()
-      .append("line")
-      .attr("x1", d => d.source.y)
-      .attr("y1", d => d.source.x)
-      .attr("x2", d => d.target.y)
-      .attr("y2", d => d.target.x)
-      .attr("stroke", "#007aff")
-      .attr("stroke-width", 2);
+    const link = svg.append('g')
+      .attr('stroke', '#999')
+      .attr('stroke-opacity', 0.6)
+      .selectAll('line')
+      .data(graph.links)
+      .join('line')
+      .attr('stroke-width', d => Math.sqrt(d.value || 1));
 
-    svg.append("g").selectAll("rect")
-      .data(treeRoot.descendants())
-      .enter()
-      .append("rect")
-      .attr("x", d => d.y - 50)
-      .attr("y", d => d.x - 15)
-      .attr("width", 100)
-      .attr("height", 30)
-      .attr("rx", 10)
-      .attr("fill", "#fff")
-      .attr("stroke", "#ccc");
+    const node = svg.append('g')
+      .attr('fill', '#000')
+      .selectAll('circle')
+      .data(graph.nodes)
+      .join('circle')
+      .attr('r', 10)
+      .call(drag(simulation));
 
-    svg.append("g").selectAll("text")
-      .data(treeRoot.descendants())
-      .enter()
-      .append("text")
-      .attr("x", d => d.y)
-      .attr("y", d => d.x + 5)
-      .attr("text-anchor", "middle")
-      .text(d => d.data.name)
-      .style("font-weight", "bold")
-      .style("font-family", "sans-serif");
-  };
+    node.append('title').text(d => d.id);
 
-  return <svg ref={svgRef}></svg>;
-};
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
+    });
+
+    function drag(simulation) {
+      return d3.drag()
+        .on('start', (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on('drag', (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on('end', (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        });
+    }
+  }
+
+  return (
+    <div className="App">
+      <h1>Repo Workflow Graph</h1>
+      {error ? (
+        <p style={{ color: 'red' }}>Error: {error}</p>
+      ) : (
+        <svg ref={svgRef} width="100%" height="600"></svg>
+      )}
+    </div>
+  );
+}
 
 export default App;
