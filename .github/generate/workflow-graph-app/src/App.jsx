@@ -5,7 +5,7 @@ const App = () => {
   const svgRef = useRef();
 
   useEffect(() => {
-    fetch('./workflow_graph.json')
+    fetch('workflow_graph.json')  // Served from public/
       .then(res => res.json())
       .then(drawGraph);
   }, []);
