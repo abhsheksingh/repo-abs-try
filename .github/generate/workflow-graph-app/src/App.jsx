@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import './App.css';
+// import './App.css';
 
 function App() {
   const svgRef = useRef();
