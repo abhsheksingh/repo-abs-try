@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write  # 👈 REQUIRED to allow pushing changes
+  contents: write
 
 jobs:
   render-graph:
@@ -19,23 +19,25 @@ jobs:
       with:
         node-version: 20
 
-    - name: Install dependencies
-      run: |
-        npm install puppeteer
-        cd .github/generate/workflow-graph-app
-        npm install
-        npm run build
+    - name: Install Puppeteer
+      run: npm install puppeteer
 
     - name: Generate graph JSON
       run: node .github/generate/scan_repo.js
 
-    - name: Copy JSON into app
-      run: cp .github/generate/workflow_graph.json .github/generate/workflow-graph-app/build/
+    - name: Copy graph JSON into public folder before build
+      run: cp .github/generate/workflow_graph.json .github/generate/workflow-graph-app/public/
 
-    - name: Render image
+    - name: Install React app dependencies & build
+      run: |
+        cd .github/generate/workflow-graph-app
+        npm install
+        npm run build
+
+    - name: Render diagram using Puppeteer
       run: node .github/generate/render_graph.mjs
 
-    - name: Check image file size
+    - name: Check image output
       run: ls -lh .github/generate/workflow_diagram.png
 
     - name: Update README and commit diagram
