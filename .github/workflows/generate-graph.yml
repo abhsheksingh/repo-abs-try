@@ -35,6 +35,9 @@ jobs:
     - name: Render image
       run: node .github/generate/render_graph.mjs
 
+    - name: Check image file size
+      run: ls -lh .github/generate/workflow_diagram.png
+
     - name: Update README and commit diagram
       run: |
         sed -i '/<!-- diagram -->/!b;n;c\![Repo Structure](.github/generate/workflow_diagram.png)' README.md
